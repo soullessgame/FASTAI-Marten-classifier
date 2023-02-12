@@ -1,0 +1,58 @@
+#Import libraries
+import fastbook
+from fastbook import *
+from fastai.vision.all import *
+from fastai.vision.widgets import *
+from fastai.imports import *
+from PIL import *
+import pathlib
+from pathlib import Path, PurePosixPath, PureWindowsPath, WindowsPath
+from fastai.vision.all import cnn_learner
+import os
+import shutil
+
+#set path
+print(pathlib.Path.cwd())
+path=Path()
+
+#Load model to windows path with this weird trick
+def load_posix_learner(path):
+    save = pathlib.PosixPath
+    pathlib.PosixPath = pathlib.WindowsPath
+    learn = load_learner(path)
+    pathlib.PosixPath = save
+    return learn
+print('model loaded')
+
+
+#define input folder(s) from which to get the data from for in the model.
+input_path= path/'Marter data/100_BTCFz'
+print(input_path)
+
+# Make four folders to put results in:
+animal_types = 'Bosmuis', 'Egel', 'Marter', 'Overig', 'Spitsmuis', 'Woelmuis'
+for o in animal_types:
+    if not os.path.exists(path/'Marter data'/o):
+        os.makedirs(path/'Marter data'/o)
+
+
+#create a prediction for every image
+count=0
+for img in input_path.iterdir():
+    print(img)
+    count+=1
+    # if count ==3:
+    #     break
+
+    PILImage.create(img)
+    pred,pred_idx,probs = load_posix_learner(path/'Marter_herkenner.pkl').predict(img)
+    print(f'Prediction: {pred}; Probability: {probs[pred_idx]:.04f}')
+
+    # print(str(input_path) +'\\' +str(pred)+ '_' + str(probs[pred_idx])[6:14] + '_'+ str(count) + '.JPG')
+    full_input_path = os.path.abspath(img)
+    print(full_input_path)
+
+    src = full_input_path
+    dst1= str(pred) + '~' + ' prob' + str(probs[pred_idx])[6:14] +' ' +str(count) + ".jpg"
+    dst2 =  input_path/dst1
+    os.rename(src, dst2)
